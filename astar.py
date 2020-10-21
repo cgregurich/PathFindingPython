@@ -50,19 +50,19 @@ class Spot:
 		self.color = WHITE
 
 	def make_closed(self):
-		self.color == RED
+		self.color = RED
 
 	def make_open(self):
-		self.color == GREEN
+		self.color = GREEN
 
 	def make_barrier(self):
-		self.color == BLACK
+		self.color = BLACK
 
 	def make_start(self):
-		self.color == ORANGE
+		self.color = ORANGE
 
 	def make_end(self):
-		self.color == TURQUOISE
+		self.color = TURQUOISE
 
 	def make_path(self):
 		self.color = PURPLE
@@ -93,20 +93,72 @@ def make_grid(rows, width):
 	return grid
 
 def draw_grid(win, rows, width):
-	# TODO: just to understand the code, try to use two separate
-	# for loops instead of a nested for loop once this code is implemented
-	# I feel like a nested for loop is unnecessary
 	gap = width // rows
 	for row in range(rows):
 		pygame.draw.line(win, GREY, (0, row*gap), (width, row*gap))
-		for col in range(rows):
-			pygame.draw.line(win, GREY, (col*gap, 0), (col*gap, width))
+	for col in range(rows):
+		pygame.draw.line(win, GREY, (col*gap, 0), (col*gap, width))
 
 def draw(win, grid, rows, width):
 	win.fill(WHITE)
-
 	for row in grid:
 		for spot in row:
 			spot.draw(win)
 	draw_grid(win, rows, width)
 	pygame.display.update()
+
+def get_clicked_pos(pos, rows, width):
+	gap = width // rows
+	y, x = pos
+
+	row = y // gap
+	col = x // gap
+
+	return row, col
+
+def main(win, width):
+	ROWS = 50
+	grid = make_grid(ROWS, width)
+
+	start = None
+	end = None
+
+	run = True
+	started = False
+	while run:
+		draw(win, grid, ROWS, width)
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				run = False
+			if started:
+				continue
+
+			pos = pygame.mouse.get_pos()
+			row, col = get_clicked_pos(pos, ROWS, width)
+			spot = grid[row][col]
+			if pygame.mouse.get_pressed()[0]: # left click
+				if not start and spot != end:
+					start = spot
+					start.make_start()
+				elif not end and spot != start:
+					end = spot
+					end.make_end()
+
+				elif spot != start and spot != end:
+					spot.make_barrier()
+
+			
+			elif pygame.mouse.get_pressed()[2]: # right click
+				if spot == start:
+					start = None
+				elif spot == end:
+					end = None
+
+				spot.reset()
+	pygame.quit()
+
+
+
+
+main(WIN, WIDTH)
+
