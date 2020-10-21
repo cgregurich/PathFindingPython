@@ -28,6 +28,7 @@ class Spot:
 		self.width = width
 		self.total_rows = total_rows
 
+
 	def get_pos(self):
 		return self.row, self.col
 
@@ -71,7 +72,20 @@ class Spot:
 		pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
 
 	def update_neighbors(self, grid):
-		pass
+		self.neighbors = []
+		# down
+		if self.row < self.total_rows - 1 and not grid[self.row+1][self.col].is_barrier():
+			self.neighbors.append(grid[self.row+1][self.col])
+		# up
+		if self.row > 0 and not grid[self.row-1][self.col].is_barrier():
+			self.neighbors.append(grid[self.row-1][self.col])
+		# right
+		# total_rows because grid is square
+		if self.col < self.total_rows - 1 and not grid[self.row][self.col+1].is_barrier():
+			self.neighbors.append(grid[self.row][self.col+1])
+		# left
+		if self.col > 0 and not grid[self.row][self.col-1].is_barrier():
+			self.neighbors.append(grid[self.row][self.col-1])
 
 	def __lt__(self, other):
 		return False
@@ -80,6 +94,33 @@ def h(p1, p2):
 	x1, y2 = p1
 	x2, y2 = p2
 	return abs(x1 - x2) + abs(y1 - y2)
+
+def algorithm(draw, grid, start, end):
+	count = 0
+	open_set = PriorityQueue()
+	open_set.put((0, count, start))
+	came_from = {}
+	g_score = {spot: float("inf") for row in grid for spot in row}
+	g_score[start] = 0
+	f_score = {spot: float("inf") for row in grid for spot in row}
+	f_score[start] = h(start.get_pos(), end.get_pos())
+
+	open_set_hash = {start}
+
+	while not open_set.empty():
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+
+		current = open_set.get()[2]
+		open_set_hash.remove(current)
+
+		if current == end:
+			#TODO: make path
+			return True
+		for neighbor in current.neighbors:
+			temp_g_score = g_score[current] + 1
+
 
 def make_grid(rows, width):
 	grid = []
@@ -116,8 +157,10 @@ def get_clicked_pos(pos, rows, width):
 
 	return row, col
 
+
+
 def main(win, width):
-	ROWS = 50
+	ROWS = 10
 	grid = make_grid(ROWS, width)
 
 	start = None
@@ -146,6 +189,7 @@ def main(win, width):
 
 				elif spot != start and spot != end:
 					spot.make_barrier()
+				spot.update_neighbors(grid)
 
 			
 			elif pygame.mouse.get_pressed()[2]: # right click
@@ -153,8 +197,23 @@ def main(win, width):
 					start = None
 				elif spot == end:
 					end = None
-
 				spot.reset()
+
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_SPACE and not started:
+					for row in grid:
+						for spot in row:
+							spot.update_neighbors()
+					algorithm(lambda: draw(win, grid, ROWS, width), grid, start, end)
+				if event.key == pygame.K_c:
+					for row in grid:
+						for spot in row:
+							spot.reset()
+					start = None
+					end = None
+
+			
+
 	pygame.quit()
 
 
